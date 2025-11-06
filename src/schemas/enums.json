@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-11-04",
+  "timezone": "Asia/Kolkata",
+  "enums": {
+    "genders": ["Male", "Female", "Other"],
+    "classes": ["Nursery", "LKG", "UKG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+    "sections": ["A", "B", "C", "D", "E"],
+    "houses": ["Red", "Blue", "Green", "Yellow"],
+    "streams": ["Science", "Commerce", "Arts", "N/A"],
+    "status": ["draft", "active", "inactive", "alumni"],
+    "admissionType": ["New", "Transfer"],
+    "hasTc": ["Yes", "No"],
+    "bloodGroups": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "Unknown"],
+    "categories": ["General", "OBC", "SC", "ST", "EWS"],
+    "religions": ["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"],
+    "boards": ["CBSE", "ICSE", "State Board", "Other"],
+    "guardianRelations": ["Grandfather", "Grandmother", "Uncle", "Aunt", "Elder Brother", "Elder Sister", "Other"],
+    "primaryContact": ["father", "mother", "guardian"],
+    "disabilityStatus": ["Yes", "No"],
+    "paymentStatus": ["paid", "partial", "pending", "overdue"],
+    "states": [
+      "Andhra Pradesh",
+      "Arunachal Pradesh",
+      "Assam",
+      "Bihar",
+      "Chhattisgarh",
+      "Goa",
+      "Gujarat",
+      "Haryana",
+      "Himachal Pradesh",
+      "Jharkhand",
+      "Karnataka",
+      "Kerala",
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Odisha",
+      "Punjab",
+      "Rajasthan",
+      "Sikkim",
+      "Tamil Nadu",
+      "Telangana",
+      "Tripura",
+      "Uttar Pradesh",
+      "Uttarakhand",
+      "West Bengal",
+      "Andaman and Nicobar Islands",
+      "Chandigarh",
+      "Dadra and Nagar Haveli and Daman and Diu",
+      "Delhi",
+      "Jammu and Kashmir",
+      "Ladakh",
+      "Lakshadweep",
+      "Puducherry"
+    ],
+    "sessionYears": [
+      "2023-2024",
+      "2024-2025",
+      "2025-2026",
+      "2026-2027",
+      "2027-2028"
+    ],
+    "documentTypes": [
+      "photo",
+      "birthCertificate",
+      "aadharStudent",
+      "aadharFather",
+      "aadharMother",
+      "transferCertificate",
+      "previousMarksheet",
+      "casteCertificate",
+      "incomeCertificate",
+      "medicalCertificate",
+      "addressProof"
+    ]
+  },
+  "sectionsByClass": {
+    "Nursery": ["A", "B"],
+    "LKG": ["A", "B"],
+    "UKG": ["A", "B"],
+    "1": ["A", "B", "C"],
+    "2": ["A", "B", "C"],
+    "3": ["A", "B", "C"],
+    "4": ["A", "B", "C"],
+    "5": ["A", "B", "C"],
+    "6": ["A", "B", "C", "D"],
+    "7": ["A", "B", "C", "D"],
+    "8": ["A", "B", "C", "D"],
+    "9": ["A", "B", "C", "D"],
+    "10": ["A", "B", "C", "D"],
+    "11": ["A", "B", "C"],
+    "12": ["A", "B", "C"]
+  },
+  "streamsByClass": {
+    "11": ["Science", "Commerce", "Arts"],
+    "12": ["Science", "Commerce", "Arts"]
+  },
+  "validationRules": {
+    "phonePattern": "^[0-9+\\-\\s()]{10,15}$",
+    "aadharPattern": "^\\d{12}$",
+    "pincodePattern": "^\\d{6}$",
+    "admissionNumberPattern": "^STU-\\d{4}-\\d{5}$",
+    "sessionYearPattern": "^\\d{4}-\\d{4}$",
+    "dateFormat": "YYYY-MM-DD"
+  },
+  "conditionalLogic": {
+    "tcRequirements": {
+      "description": "TC requirements based on admission type",
+      "rules": [
+        {
+          "condition": "admissionType === 'New'",
+          "then": "hasTc must be 'No'",
+          "error": "New admissions cannot have a Transfer Certificate"
+        },
+        {
+          "condition": "admissionType === 'Transfer'",
+          "then": "hasTc must be 'Yes' AND tcNumber AND tcIssueDate are required",
+          "error": "Transfer admissions must provide TC details"
+        }
+      ]
+    },
+    "streamRequirements": {
+      "description": "Stream is required only for classes 11 and 12",
+      "applicableClasses": ["11", "12"]
+    },
+    "documentRequirements": {
+      "mandatory": ["photo", "birthCertificate"],
+      "conditionalMandatory": {
+        "transferCertificate": {
+          "condition": "admissionType === 'Transfer'",
+          "description": "Required for transfer students"
+        },
+        "casteCertificate": {
+          "condition": "category in ['OBC', 'SC', 'ST']",
+          "description": "Required for reserved category students"
+        }
+      }
+    }
+  }
+}

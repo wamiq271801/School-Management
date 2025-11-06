@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Export Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+</head>
+<body>
+    <h1>Student Export Test</h1>
+    <button onclick="testExport()">Test Excel Export</button>
+    
+    <script>
+        const sampleStudent = {
+            id: "1",
+            admissionNumber: "STU-2024-00001",
+            admissionDate: "2024-01-15",
+            basic: {
+                firstName: "John",
+                middleName: "Michael",
+                lastName: "Doe",
+                gender: "Male",
+                dateOfBirth: "2010-05-15",
+                bloodGroup: "O+",
+                category: "General",
+                nationality: "Indian",
+                religion: "Hindu",
+                motherTongue: "English",
+                placeOfBirth: "Mumbai"
+            },
+            father: {
+                name: "Robert Doe",
+                occupation: "Engineer",
+                mobile: "+91-9876543210",
+                email: "robert.doe@email.com"
+            },
+            mother: {
+                name: "Mary Doe",
+                occupation: "Teacher",
+                mobile: "+91-9876543211",
+                email: "mary.doe@email.com"
+            },
+            primaryContact: "father",
+            permanentAddress: {
+                line1: "123 Main Street",
+                line2: "Near City Center",
+                city: "Mumbai",
+                state: "Maharashtra",
+                pincode: "400001",
+                distanceFromSchool: 5
+            },
+            academic: {
+                currentYear: "2024-25",
+                admissionClass: "Class 10",
+                section: "A",
+                rollNumber: "10A001",
+                previousSchool: {
+                    name: "ABC School",
+                    lastClass: "Class 9",
+                    percentage: 85,
+                    board: "CBSE",
+                    transferCertificate: {
+                        number: "TC-2024-001",
+                        issueDate: "2024-01-10"
+                    }
+                }
+            },
+            fees: {
+                structure: {
+                    admissionFee: 5000,
+                    tuitionFee: 25000,
+                    annualCharges: 3000,
+                    transportFee: 8000,
+                    cautionDeposit: 2000,
+                    computerLabFee: 1500,
+                    libraryFee: 1000,
+                    examinationFee: 2000,
+                    otherCharges: 500
+                },
+                totalFee: 48000,
+                amountPaid: 30000,
+                balanceDue: 18000,
+                paymentStatus: "partial",
+                paymentHistory: [{
+                    transactionId: "TXN-001",
+                    amount: 30000,
+                    paymentMode: "Online",
+                    paymentDate: "2024-01-20",
+                    receiptNumber: "RCP-001"
+                }]
+            },
+            documents: {
+                photo: { driveId: "1", url: "url1", fileName: "photo.jpg", size: 1024, uploadedAt: "2024-01-15" },
+                birthCertificate: { driveId: "2", url: "url2", fileName: "birth.pdf", size: 2048, uploadedAt: "2024-01-15" },
+                aadharStudent: { driveId: "3", url: "url3", fileName: "aadhar.pdf", size: 1536, uploadedAt: "2024-01-15" }
+            },
+            status: "active",
+            createdAt: new Date("2024-01-15"),
+            updatedAt: new Date("2024-01-20")
+        };
+
+        async function testExport() {
+            try {
+                console.log("Testing Excel export...");
+                
+                // Create workbook
+                const workbook = new ExcelJS.Workbook();
+                workbook.creator = 'SmartSchool Management System';
+                workbook.created = new Date();
+                
+                // Create worksheet
+                const worksheet = workbook.addWorksheet('Students Report');
+                
+                // Add header
+                const headerRow1 = worksheet.addRow(['SMARTSCHOOL MANAGEMENT SYSTEM']);
+                headerRow1.height = 35;
+                headerRow1.getCell(1).font = { size: 20, bold: true };
+                headerRow1.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                
+                // Add data
+                worksheet.addRow(['Student Name', 'Admission No', 'Class', 'Section']);
+                worksheet.addRow([
+                    `${sampleStudent.basic.firstName} ${sampleStudent.basic.lastName}`,
+                    sampleStudent.admissionNumber,
+                    sampleStudent.academic.admissionClass,
+                    sampleStudent.academic.section
+                ]);
+                
+                // Generate and download
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { 
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'test-export.xlsx';
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                console.log("Export successful!");
+                alert("Export test completed! Check your downloads folder.");
+                
+            } catch (error) {
+                console.error("Export failed:", error);
+                alert("Export test failed: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

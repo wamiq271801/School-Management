@@ -1,0 +1,602 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smartschool.app/schemas/student.schema.json",
+  "title": "Student",
+  "description": "Complete student profile schema for SmartSchool Management System",
+  "type": "object",
+  "required": ["admissionNumber", "basic", "academic", "primaryContact"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Firestore document ID (auto-generated)"
+    },
+    "admissionNumber": {
+      "type": "string",
+      "description": "Unique admission number (format: STU-YYYY-NNNNN)",
+      "pattern": "^STU-\\d{4}-\\d{5}$"
+    },
+    "admissionDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of admission (YYYY-MM-DD)"
+    },
+    "basic": {
+      "type": "object",
+      "required": ["firstName", "lastName", "gender", "dateOfBirth", "category", "nationality", "motherTongue"],
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Student's first name"
+        },
+        "middleName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Student's middle name (optional)"
+        },
+        "lastName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Student's last name"
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["Male", "Female", "Other"],
+          "description": "Student's gender"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of birth (YYYY-MM-DD)"
+        },
+        "bloodGroup": {
+          "type": "string",
+          "enum": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-", "Unknown"],
+          "description": "Blood group"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["General", "OBC", "SC", "ST", "EWS"],
+          "description": "Category for reservation purposes"
+        },
+        "nationality": {
+          "type": "string",
+          "default": "Indian",
+          "description": "Nationality"
+        },
+        "religion": {
+          "type": "string",
+          "enum": ["Hinduism", "Islam", "Christianity", "Sikhism", "Buddhism", "Jainism", "Other"],
+          "description": "Religion (optional)"
+        },
+        "motherTongue": {
+          "type": "string",
+          "description": "Mother tongue/first language"
+        },
+        "caste": {
+          "type": "string",
+          "description": "Caste (optional)"
+        },
+        "placeOfBirth": {
+          "type": "string",
+          "description": "Place of birth (optional)"
+        },
+        "aadharNumber": {
+          "type": "string",
+          "pattern": "^\\d{12}$",
+          "description": "12-digit Aadhaar number (optional)"
+        }
+      }
+    },
+    "academic": {
+      "type": "object",
+      "required": ["currentYear", "admissionClass", "section"],
+      "properties": {
+        "currentYear": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{4}$",
+          "description": "Academic session year (e.g., 2025-2026)"
+        },
+        "admissionClass": {
+          "type": "string",
+          "enum": ["Nursery", "LKG", "UKG", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+          "description": "Class at admission"
+        },
+        "section": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D", "E"],
+          "description": "Section within the class"
+        },
+        "rollNumber": {
+          "type": "string",
+          "description": "Roll number (optional, can be assigned later)"
+        },
+        "stream": {
+          "type": "string",
+          "enum": ["Science", "Commerce", "Arts", "N/A"],
+          "description": "Stream for classes 11-12 (optional)"
+        },
+        "house": {
+          "type": "string",
+          "enum": ["Red", "Blue", "Green", "Yellow"],
+          "description": "House allocation (optional)"
+        },
+        "admissionType": {
+          "type": "string",
+          "enum": ["New", "Transfer"],
+          "description": "Type of admission"
+        },
+        "previousSchool": {
+          "type": "object",
+          "description": "Previous school details (required if admissionType is Transfer)",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of previous school"
+            },
+            "lastClass": {
+              "type": "string",
+              "description": "Last class attended"
+            },
+            "percentage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Percentage obtained (optional)"
+            },
+            "board": {
+              "type": "string",
+              "enum": ["CBSE", "ICSE", "State Board", "Other"],
+              "description": "Board of previous school"
+            },
+            "transferCertificate": {
+              "type": "object",
+              "description": "TC details (required if admissionType is Transfer)",
+              "required": ["number", "issueDate"],
+              "properties": {
+                "number": {
+                  "type": "string",
+                  "description": "TC number"
+                },
+                "issueDate": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "TC issue date (YYYY-MM-DD)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "father": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Father's full name"
+        },
+        "occupation": {
+          "type": "string",
+          "description": "Father's occupation"
+        },
+        "mobile": {
+          "type": "string",
+          "pattern": "^[0-9+\\-\\s()]{10,15}$",
+          "description": "Father's mobile number"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Father's email address"
+        },
+        "aadharNumber": {
+          "type": "string",
+          "pattern": "^\\d{12}$",
+          "description": "Father's Aadhaar number"
+        },
+        "officeAddress": {
+          "type": "string",
+          "description": "Father's office address"
+        }
+      }
+    },
+    "mother": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Mother's full name"
+        },
+        "occupation": {
+          "type": "string",
+          "description": "Mother's occupation"
+        },
+        "mobile": {
+          "type": "string",
+          "pattern": "^[0-9+\\-\\s()]{10,15}$",
+          "description": "Mother's mobile number"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Mother's email address"
+        },
+        "aadharNumber": {
+          "type": "string",
+          "pattern": "^\\d{12}$",
+          "description": "Mother's Aadhaar number"
+        },
+        "officeAddress": {
+          "type": "string",
+          "description": "Mother's office address"
+        }
+      }
+    },
+    "guardian": {
+      "type": "object",
+      "description": "Guardian details (if different from parents)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Guardian's full name"
+        },
+        "relation": {
+          "type": "string",
+          "enum": ["Grandfather", "Grandmother", "Uncle", "Aunt", "Elder Brother", "Elder Sister", "Other"],
+          "description": "Relationship to student"
+        },
+        "mobile": {
+          "type": "string",
+          "pattern": "^[0-9+\\-\\s()]{10,15}$",
+          "description": "Guardian's mobile number"
+        },
+        "address": {
+          "type": "string",
+          "description": "Guardian's address"
+        }
+      }
+    },
+    "primaryContact": {
+      "type": "string",
+      "enum": ["father", "mother", "guardian"],
+      "description": "Primary contact person"
+    },
+    "permanentAddress": {
+      "type": "object",
+      "properties": {
+        "line1": {
+          "type": "string",
+          "description": "Address line 1"
+        },
+        "line2": {
+          "type": "string",
+          "description": "Address line 2 (optional)"
+        },
+        "city": {
+          "type": "string",
+          "description": "City"
+        },
+        "state": {
+          "type": "string",
+          "description": "State"
+        },
+        "pincode": {
+          "type": "string",
+          "pattern": "^\\d{6}$",
+          "description": "6-digit PIN code"
+        },
+        "distanceFromSchool": {
+          "type": "number",
+          "description": "Distance from school in kilometers (optional)"
+        }
+      }
+    },
+    "currentAddress": {
+      "type": "object",
+      "description": "Current address (if different from permanent)",
+      "properties": {
+        "line1": {
+          "type": "string",
+          "description": "Address line 1"
+        },
+        "line2": {
+          "type": "string",
+          "description": "Address line 2 (optional)"
+        },
+        "city": {
+          "type": "string",
+          "description": "City"
+        },
+        "state": {
+          "type": "string",
+          "description": "State"
+        },
+        "pincode": {
+          "type": "string",
+          "pattern": "^\\d{6}$",
+          "description": "6-digit PIN code"
+        },
+        "distanceFromSchool": {
+          "type": "number",
+          "description": "Distance from school in kilometers (optional)"
+        }
+      }
+    },
+    "documents": {
+      "type": "object",
+      "description": "Document references with filenames for ZIP auto-matching",
+      "properties": {
+        "photo": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string",
+              "description": "Filename for ZIP matching (e.g., {AdmissionNo}_Photo.jpg)"
+            },
+            "driveId": {
+              "type": "string",
+              "description": "Google Drive file ID (populated after upload)"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Document URL"
+            },
+            "size": {
+              "type": "number",
+              "description": "File size in bytes"
+            },
+            "uploadedAt": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Upload timestamp"
+            }
+          }
+        },
+        "birthCertificate": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string",
+              "description": "Filename for ZIP matching"
+            },
+            "driveId": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "size": {
+              "type": "number"
+            },
+            "uploadedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "aadharStudent": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string"
+            },
+            "driveId": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "size": {
+              "type": "number"
+            },
+            "uploadedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "transferCertificate": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string"
+            },
+            "driveId": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "size": {
+              "type": "number"
+            },
+            "uploadedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "previousMarksheet": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string"
+            },
+            "driveId": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "size": {
+              "type": "number"
+            },
+            "uploadedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "casteCertificate": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string"
+            },
+            "driveId": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "size": {
+              "type": "number"
+            },
+            "uploadedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "medicalCertificate": {
+          "type": "object",
+          "properties": {
+            "fileName": {
+              "type": "string"
+            },
+            "driveId": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "size": {
+              "type": "number"
+            },
+            "uploadedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    },
+    "medicalInfo": {
+      "type": "object",
+      "properties": {
+        "disabilityStatus": {
+          "type": "string",
+          "enum": ["Yes", "No"],
+          "default": "No",
+          "description": "Whether student has any disability"
+        },
+        "disabilityDetails": {
+          "type": "string",
+          "description": "Details of disability (if any)"
+        },
+        "medicalNotes": {
+          "type": "string",
+          "description": "Any medical conditions, allergies, or notes"
+        }
+      }
+    },
+    "fees": {
+      "type": "object",
+      "properties": {
+        "structure": {
+          "type": "object",
+          "properties": {
+            "admissionFee": {
+              "type": "number",
+              "minimum": 0
+            },
+            "tuitionFee": {
+              "type": "number",
+              "minimum": 0
+            },
+            "annualCharges": {
+              "type": "number",
+              "minimum": 0
+            },
+            "transportFee": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cautionDeposit": {
+              "type": "number",
+              "minimum": 0
+            },
+            "computerLabFee": {
+              "type": "number",
+              "minimum": 0
+            },
+            "libraryFee": {
+              "type": "number",
+              "minimum": 0
+            },
+            "examinationFee": {
+              "type": "number",
+              "minimum": 0
+            },
+            "otherCharges": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "totalFee": {
+          "type": "number",
+          "minimum": 0
+        },
+        "amountPaid": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0
+        },
+        "balanceDue": {
+          "type": "number",
+          "minimum": 0
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["paid", "partial", "pending", "overdue"],
+          "default": "pending"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "inactive", "alumni"],
+      "default": "active",
+      "description": "Student status"
+    },
+    "externalId": {
+      "type": "string",
+      "description": "External system ID for integration (optional)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or remarks"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Record creation timestamp"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    }
+  }
+}

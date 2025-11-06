@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* SmartSchool Admin Design System - Indian K-12 Theme */
+    /* Primary Color: Vibrant Indigo */
+    --primary: 231 48% 48%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Accent Color: Coral */
+    --accent: 14 100% 63%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Success: Green */
+    --success: 122 39% 49%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Info: Sky Blue */
+    --info: 199 98% 48%;
+    --info-foreground: 0 0% 100%;
+    
+    /* Warning: Amber */
+    --warning: 45 100% 51%;
+    --warning-foreground: 0 0% 13%;
+    
+    /* Error: Red */
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Background & Surface */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 13%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 13%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 13%;
+    
+    /* Secondary */
+    --secondary: 231 48% 48%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Muted */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 38%;
+    
+    /* Border & Input */
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 231 48% 48%;
+    
+    /* Radius System */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius: 0.75rem;
+    
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 0 0% 13%;
+    --sidebar-primary: 231 48% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 13%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 231 48% 48%;
+    
+    /* Elevation Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.16);
+    
+    /* Transitions */
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --primary: 231 48% 58%;
+    --primary-foreground: 0 0% 100%;
+    
+    --accent: 14 100% 63%;
+    --accent-foreground: 0 0% 100%;
+    
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
+    
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 98%;
+    
+    --secondary: 231 48% 58%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 62%;
+    
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 231 48% 58%;
+    
+    --sidebar: 0 0% 13%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 231 48% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 20%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 231 48% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Global: hide all scrollbars but keep scrolling */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+  *::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Edge */
+    width: 0;
+    height: 0;
+  }
+  /* Hide scrollbar but keep scroll functional */
+  .hide-scrollbar {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+  }
+  .hide-scrollbar::-webkit-scrollbar { /* Chrome/Safari/Edge */
+    display: none;
+  }
+
+  /* Ensure Radix ScrollArea viewport also hides scrollbars */
+  [data-radix-scroll-area-viewport] {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+    display: none;
+  }
+  .shadow-level-1 {
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .shadow-level-2 {
+    box-shadow: var(--shadow-md);
+  }
+  
+  .shadow-level-3 {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .shadow-level-4 {
+    box-shadow: var(--shadow-xl);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+}

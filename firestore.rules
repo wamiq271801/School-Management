@@ -1,0 +1,313 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : null;
+    }
+    
+    function isActiveUser() {
+      // Allow minimal access if profile doesn't exist yet (for first-time setup)
+      return isAuthenticated() && (getUserData() == null || getUserData().isActive == true);
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserData() != null && getUserData().role == 'admin';
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && getUserData() != null && getUserData().role == 'teacher';
+    }
+    
+    function isStaff() {
+      return isAuthenticated() && getUserData() != null && getUserData().role == 'staff';
+    }
+    
+    function hasPermission(resource, action) {
+      return isAuthenticated() && getUserData() != null && 
+             getUserData().permissions[resource][action] == true;
+    }
+    
+    function hasStudentAccess(action) {
+      return isActiveUser() && (
+        getUserData() == null || // Allow during initial setup
+        hasPermission('students', action) ||
+        isAdmin() // Admins have full access
+      );
+    }
+    
+    function canAccessStudent(studentId) {
+      return hasStudentAccess('read') || 
+             (isTeacher() && isStudentInMyClasses(studentId));
+    }
+    
+    function isStudentInMyClasses(studentId) {
+      // Teachers can access students in their assigned classes
+      return isTeacher() && exists(/databases/$(database)/documents/students/$(studentId)) &&
+             get(/databases/$(database)/documents/students/$(studentId)).data.academic.admissionClass in 
+             getUserData().assignedClasses;
+    }
+    
+    function canModifyStudent(studentId) {
+      return hasStudentAccess('write') || 
+             (isTeacher() && isStudentInMyClasses(studentId) && hasPermission('students', 'write'));
+    }
+
+    // Users collection - Authentication profiles
+    match /users/{userId} {
+      // Owner can create their own profile during signup
+      allow create: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.email == request.auth.token.email &&
+        request.resource.data.keys().hasAll(['uid', 'email', 'displayName', 'role']) &&
+        request.resource.data.role in ['admin', 'teacher', 'staff'];
+
+      // Owner can read their own profile
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      // Owner can update their own profile (excluding sensitive fields)
+      allow update: if isAuthenticated() && request.auth.uid == userId &&
+        !('role' in request.resource.data.diff(resource.data).affectedKeys()) &&
+        !('permissions' in request.resource.data.diff(resource.data).affectedKeys()) &&
+        !('isActive' in request.resource.data.diff(resource.data).affectedKeys()) &&
+        !('uid' in request.resource.data.diff(resource.data).affectedKeys());
+
+      // Admin overrides for user management
+      allow read, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Students collection - Core student management
+    match /students/{studentId} {
+      // Read permissions
+      allow read: if canAccessStudent(studentId);
+      
+      // Create permissions with comprehensive validation
+      allow create: if hasStudentAccess('write') &&
+        // Validate required fields
+        request.resource.data.keys().hasAll(['admissionNumber', 'basic', 'academic', 'status']) &&
+        request.resource.data.basic.keys().hasAll(['firstName', 'lastName', 'gender', 'dateOfBirth', 'category', 'nationality', 'motherTongue']) &&
+        request.resource.data.academic.keys().hasAll(['currentYear', 'admissionClass', 'section']) &&
+        request.resource.data.status in ['draft', 'active', 'inactive', 'alumni'] &&
+        // Validate data types
+        request.resource.data.basic.firstName is string &&
+        request.resource.data.basic.lastName is string &&
+        request.resource.data.basic.gender in ['Male', 'Female', 'Other'] &&
+        request.resource.data.academic.currentYear is string &&
+        request.resource.data.academic.admissionClass is string &&
+        request.resource.data.academic.section is string &&
+        // Ensure admission number format
+        request.resource.data.admissionNumber.matches('STU-[0-9]{4}-[0-9]{5}') &&
+        // Set metadata
+        request.resource.data.createdBy == request.auth.uid;
+      
+      // Update permissions with field protection
+      allow update: if canModifyStudent(studentId) &&
+        // Prevent modification of system fields
+        !('admissionNumber' in request.resource.data.diff(resource.data).affectedKeys()) &&
+        !('createdAt' in request.resource.data.diff(resource.data).affectedKeys()) &&
+        !('createdBy' in request.resource.data.diff(resource.data).affectedKeys()) &&
+        // Ensure updatedBy is set
+        request.resource.data.updatedBy == request.auth.uid;
+      
+      // Delete permissions (admin only for safety)
+      allow delete: if isAdmin() || hasPermission('students', 'delete');
+      
+      // Student subcollections with inherited permissions
+      match /feeDetails/{feeDetailId} {
+        allow read: if canAccessStudent(studentId);
+        allow create, update: if canModifyStudent(studentId) && hasPermission('fees', 'write');
+        allow delete: if isAdmin() || hasPermission('fees', 'delete');
+      }
+      
+      match /feesTransactions/{transactionId} {
+        allow read: if canAccessStudent(studentId);
+        allow create: if canModifyStudent(studentId) && hasPermission('fees', 'write') &&
+          // Validate transaction data
+          request.resource.data.keys().hasAll(['transactionId', 'amountPaid', 'paymentMode', 'paymentDate', 'studentId']) &&
+          request.resource.data.amountPaid is number &&
+          request.resource.data.amountPaid > 0 &&
+          request.resource.data.studentId == studentId &&
+          request.resource.data.createdBy == request.auth.uid;
+        allow update: if canModifyStudent(studentId) && hasPermission('fees', 'write');
+        allow delete: if isAdmin() || hasPermission('fees', 'delete');
+      }
+      
+      match /attendance/{attendanceId} {
+        allow read: if canAccessStudent(studentId) || hasPermission('attendance', 'read');
+        allow create, update: if (canModifyStudent(studentId) || hasPermission('attendance', 'write')) &&
+          request.resource.data.studentId == studentId &&
+          request.resource.data.date is string &&
+          request.resource.data.status in ['present', 'absent', 'late', 'excused'];
+        allow delete: if isAdmin() || hasPermission('attendance', 'delete');
+      }
+      
+      match /documents/{documentId} {
+        allow read: if canAccessStudent(studentId);
+        allow create, update: if canModifyStudent(studentId) &&
+          request.resource.data.studentId == studentId &&
+          request.resource.data.uploadedBy == request.auth.uid;
+        allow delete: if canModifyStudent(studentId) || isAdmin();
+      }
+      
+      match /examResults/{examId} {
+        allow read: if canAccessStudent(studentId) || hasPermission('exams', 'read');
+        allow create, update: if hasPermission('exams', 'write') &&
+          request.resource.data.studentId == studentId;
+        allow delete: if isAdmin() || hasPermission('exams', 'delete');
+      }
+      
+      match /notifications/{notificationId} {
+        allow read: if canAccessStudent(studentId);
+        allow create: if isActiveUser() &&
+          request.resource.data.studentId == studentId &&
+          request.resource.data.createdBy == request.auth.uid;
+        allow update, delete: if isAdmin();
+      }
+    }
+    
+    // Admissions collection - Multi-step admission process
+    match /admissions/{admissionId} {
+      // Read permissions
+      allow read: if hasStudentAccess('read');
+      
+      // Create new admission process
+      allow create: if hasStudentAccess('write') &&
+        request.resource.data.keys().hasAll(['status', 'currentStep', 'createdBy']) &&
+        request.resource.data.status in ['draft', 'in_progress', 'completed', 'cancelled'] &&
+        request.resource.data.currentStep >= 1 && request.resource.data.currentStep <= 6 &&
+        request.resource.data.createdBy == request.auth.uid;
+      
+      // Update admission process
+      allow update: if hasStudentAccess('write') &&
+        (resource.data.createdBy == request.auth.uid || isAdmin()) &&
+        request.resource.data.updatedBy == request.auth.uid;
+      
+      // Delete admission (admin only)
+      allow delete: if isAdmin();
+      
+      // Admission steps subcollection (1-6 steps)
+      match /steps/{stepNumber} {
+        allow read: if hasStudentAccess('read');
+        allow create, update: if hasStudentAccess('write') &&
+          (get(/databases/$(database)/documents/admissions/$(admissionId)).data.createdBy == request.auth.uid || isAdmin()) &&
+          stepNumber.matches('[1-6]') &&
+          request.resource.data.stepNumber == int(stepNumber) &&
+          request.resource.data.completedBy == request.auth.uid;
+        allow delete: if isAdmin();
+      }
+      
+      // Admission documents
+      match /documents/{documentId} {
+        allow read: if hasStudentAccess('read');
+        allow create, update: if hasStudentAccess('write') &&
+          (get(/databases/$(database)/documents/admissions/$(admissionId)).data.createdBy == request.auth.uid || isAdmin()) &&
+          request.resource.data.uploadedBy == request.auth.uid;
+        allow delete: if isAdmin();
+      }
+    }
+    
+    // Classes collection - Academic organization
+    match /classes/{classId} {
+      allow read: if isActiveUser();
+      allow create, update: if isAdmin() || hasPermission('classes', 'write');
+      allow delete: if isAdmin();
+      
+      match /sections/{sectionId} {
+        allow read: if isActiveUser();
+        allow create, update: if isAdmin() || hasPermission('classes', 'write');
+        allow delete: if isAdmin();
+        
+        match /students/{studentRef} {
+          allow read: if isActiveUser();
+          allow create, update: if hasStudentAccess('write');
+          allow delete: if isAdmin() || hasStudentAccess('delete');
+        }
+      }
+    }
+    
+    // Fee structures collection
+    match /feeStructures/{structureId} {
+      allow read: if isActiveUser();
+      allow create, update: if isAdmin() || hasPermission('fees', 'write');
+      allow delete: if isAdmin();
+    }
+    
+    // System settings (admin only)
+    match /settings/{settingId} {
+      allow read: if isActiveUser() && hasPermission('settings', 'read');
+      allow create, update: if isAdmin() || hasPermission('settings', 'write');
+      allow delete: if isAdmin();
+    }
+    
+    // Audit logs (read-only for non-admins)
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isActiveUser(); // System can create logs
+      allow update, delete: if false; // Logs are immutable
+    }
+    
+    // Import Batches - Bulk import workflow
+    match /importBatches/{batchId} {
+      // Owner can read their own batch
+      allow read: if isActiveUser() && resource.data.userId == request.auth.uid;
+
+      // Create batch with required fields
+      allow create: if isActiveUser() &&
+        request.resource.data.keys().hasAll(['userId','userEmail','fileName','totalRows','validRows','invalidRows','warningRows','status','createdAt','updatedAt']) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status in ['pending', 'reviewing', 'importing', 'completed', 'failed'];
+
+      // Only allow owner to update status and updatedAt
+      allow update: if isActiveUser() && resource.data.userId == request.auth.uid && (
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['status','updatedAt'])
+      ) && request.resource.data.status in ['pending', 'reviewing', 'importing', 'completed', 'failed'];
+
+      // Delete restricted to admin
+      allow delete: if isAdmin();
+
+      // Rows subcollection under a batch
+      match /rows/{rowId} {
+        // Owner can read their own rows
+        allow read: if isActiveUser() && get(/databases/$(database)/documents/importBatches/$(batchId)).data.userId == request.auth.uid;
+
+        // Owner can create row entries with required structure
+        allow create: if isActiveUser() && get(/databases/$(database)/documents/importBatches/$(batchId)).data.userId == request.auth.uid &&
+          request.resource.data.keys().hasAll(['rowNumber','data','errors','warnings','status']);
+
+        // Owner can update result fields after import attempt
+        allow update: if isActiveUser() && get(/databases/$(database)/documents/importBatches/$(batchId)).data.userId == request.auth.uid &&
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['status','studentId','importedAt','errorMessage','errors','warnings']);
+
+        // Delete restricted to admin
+        allow delete: if isAdmin();
+      }
+    }
+    
+    // Teachers collection
+    match /teachers/{teacherId} {
+      allow read: if isActiveUser() && hasPermission('teachers', 'read');
+      allow create: if isAdmin() || hasPermission('teachers', 'write');
+      allow update: if isAdmin() || hasPermission('teachers', 'write') ||
+        (isTeacher() && teacherId == request.auth.uid); // Teachers can update their own profile
+      allow delete: if isAdmin() || hasPermission('teachers', 'delete');
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser() &&
+        request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin() || 
+        (resource.data.createdBy == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+  }
+}
